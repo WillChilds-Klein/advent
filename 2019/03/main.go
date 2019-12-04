@@ -32,10 +32,10 @@ func main() {
 	ss := strings.Fields(string(file))
 	frst := strings.Split(ss[0], ",")
 	scnd := strings.Split(ss[1], ",")
-	seen := make(map[point]bool)
-	closest := math.MaxInt64
+	seen := make(map[point]int)
+	closestDistance, closestSteps := math.MaxInt64, math.MaxInt64
 
-	x, y := 0, 0
+	x, y, steps := 0, 0, 0
 	for _, s := range frst {
 		n, err := strconv.Atoi(s[1:])
 		check(err)
@@ -60,11 +60,12 @@ func main() {
 		}
 		for i := 0; i < n; i++ {
 			*ord += step
-			seen[point{x: x, y: y}] = true
+			steps++
+			seen[point{x: x, y: y}] = steps
 		}
 	}
 
-	x, y = 0, 0
+	x, y, steps = 0, 0, 0
 	for _, s := range scnd {
 		n, err := strconv.Atoi(s[1:])
 		check(err)
@@ -89,13 +90,19 @@ func main() {
 		}
 		for i := 0; i < n; i++ {
 			*ord += step
-			if _, present := seen[point{x: x, y: y}]; present {
-				distance := int(math.Abs(float64(x)) + math.Abs(float64(y)))
-				if distance < closest {
-					closest = distance
+			steps++
+			if otherSteps, present := seen[point{x: x, y: y}]; present {
+				manhattan := int(math.Abs(float64(x)) + math.Abs(float64(y)))
+				if manhattan < closestDistance {
+					closestDistance = manhattan
+				}
+				totalSteps := steps + otherSteps
+				if totalSteps < closestSteps {
+					closestSteps = totalSteps
 				}
 			}
 		}
 	}
-	println(closest)
+	println("distance: ", closestDistance)
+	println("steps: ", closestSteps)
 }
