@@ -50,8 +50,18 @@ func main() {
 		check(err)
 		prog[i] = num
 	}
-	prog[1] = 12
-	prog[2] = 2
-	compute(prog)
-	fmt.Printf("%v", prog[0])
+
+	buff := make([]int, len(prog))
+	for noun := 0; noun < 100; noun++ {
+		for verb := 0; verb < 100; verb++ {
+			copy(buff, prog)
+			buff[1] = noun
+			buff[2] = verb
+			compute(buff)
+			output := buff[0]
+			if output == 19690720 {
+				fmt.Printf("%d", 100*noun+verb)
+			}
+		}
+	}
 }
