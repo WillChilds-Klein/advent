@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// https://adventofcode.com/2019/day/1
+// https://adventofcode.com/2019/day/4
 
 func check(err error) {
 	if err != nil {
@@ -35,29 +35,39 @@ func main() {
 	if len(bounds) != 2 {
 		panic("Invalid input: need 2 bounds")
 	}
+
 	start, err := strconv.Atoi(bounds[0])
 	check(err)
 	end, err := strconv.Atoi(bounds[1])
 	check(err)
 	count := 0
+
 	for i := start; i <= end; i++ {
 		if i/10000 < 1 {
 			continue
 		}
-		hasDouble, hasInc := false, true
-		prev := math.MaxInt64
+		hasInc := true
+		doubleCount, runLen := 0, 0
 		// iterate over digits from right to left
+		prev := math.MaxInt64
 		for base := i; base != 0; base /= 10 {
 			rmdr := base % 10
-			if rmdr == prev {
-				hasDouble = true
-			}
 			if rmdr > prev {
 				hasInc = false
 			}
+			if rmdr == prev {
+				runLen++
+				if runLen == 1 {
+					doubleCount++
+				} else if runLen == 2 {
+					doubleCount--
+				}
+			} else {
+				runLen = 0
+			}
 			prev = rmdr
 		}
-		if !hasDouble || !hasInc {
+		if doubleCount < 1 || !hasInc {
 			continue
 		}
 		count++
