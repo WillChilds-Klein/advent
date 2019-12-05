@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// https://adventofcode.com/2019/day/2
+// https://adventofcode.com/2019/day/5
 
 type Op struct {
 	code, params int
@@ -19,10 +19,14 @@ func (op Op) String() string {
 	return fmt.Sprintf("Op{code: %d, params: %d}", op.code, op.params)
 }
 
-var OpAdd Op = Op{code: 01, params: 3}
-var OpMlt Op = Op{code: 02, params: 3}
-var OpInp Op = Op{code: 03, params: 1}
-var OpOut Op = Op{code: 04, params: 1}
+var OpAdd Op = Op{code: 1, params: 3}
+var OpMlt Op = Op{code: 2, params: 3}
+var OpInp Op = Op{code: 3, params: 1}
+var OpOut Op = Op{code: 4, params: 1}
+var OpIft Op = Op{code: 5, params: 2}
+var OpIff Op = Op{code: 6, params: 2}
+var OpLss Op = Op{code: 7, params: 3}
+var OpEql Op = Op{code: 8, params: 3}
 var OpHlt Op = Op{code: 99, params: 0}
 
 func check(err error) {
@@ -44,6 +48,14 @@ func parseOp(opInt int) (Op, []int) {
 		op = OpInp
 	case OpOut.code:
 		op = OpOut
+	case OpIft.code:
+		op = OpIft
+	case OpIff.code:
+		op = OpIff
+	case OpLss.code:
+		op = OpLss
+	case OpEql.code:
+		op = OpEql
 	case OpHlt.code:
 		op = OpHlt
 	default:
@@ -74,13 +86,13 @@ func getParams(prog []int, offset int, modes []int) []int {
 }
 
 func compute(prog []int) {
-	var step int
-	for i := 0; i < len(prog); i += step {
-		op, modes := parseOp(prog[i])
+	ptr := 0
+	for {
+		op, modes := parseOp(prog[ptr])
 		if op.code == OpHlt.code {
 			break
 		}
-		params := getParams(prog, i+1, modes)
+		params := getParams(prog, ptr+1, modes)
 		switch op.code {
 		case OpAdd.code:
 			prog[params[2]] = prog[params[0]] + prog[params[1]]
@@ -96,10 +108,32 @@ func compute(prog []int) {
 			prog[params[0]] = n
 		case OpOut.code:
 			println(prog[params[0]])
+		case OpIft.code:
+			if prog[params[0]] != 0 {
+				ptr = prog[params[1]]
+				continue
+			}
+		case OpIff.code:
+			if prog[params[0]] == 0 {
+				ptr = prog[params[1]]
+				continue
+			}
+		case OpLss.code:
+			if prog[params[0]] < prog[params[1]] {
+				prog[params[2]] = 1
+			} else {
+				prog[params[2]] = 0
+			}
+		case OpEql.code:
+			if prog[params[0]] == prog[params[1]] {
+				prog[params[2]] = 1
+			} else {
+				prog[params[2]] = 0
+			}
 		default:
 			panic(fmt.Sprintf("Unexpected OpCode: %d", op.code))
 		}
-		step = op.params + 1
+		ptr += op.params + 1
 	}
 }
 
