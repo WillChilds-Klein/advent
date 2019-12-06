@@ -23,21 +23,30 @@ func main() {
 	check(err)
 
 	ss := strings.Fields(string(file))
-	orbits := make(map[string]string)
+	orbits := make(map[string][]string)
 
 	for _, s := range ss {
 		planets := strings.Split(s, ")")
 		orbitee, orbiter := planets[0], planets[1]
-		orbits[orbiter] = orbitee
+		orbits[orbiter] = append(orbits[orbiter], orbitee)
+		orbits[orbitee] = append(orbits[orbitee], orbiter)
 	}
 
+	// init depth to -1 because we're starting one away from planet YOU orbits
+	println(dfs("YOU", "", -1, orbits))
+}
+
+// NOTE: this should work in the general case of multiple orbiters
+func dfs(curr string, prev string, depth int, orbits map[string][]string) int {
 	sum := 0
-	for orbiter, _ := range orbits {
-		ctr := 0
-		for planet := orbiter; planet != "COM"; planet = orbits[planet] {
-			ctr++
+	for _, neighbor := range orbits[curr] {
+		if neighbor == prev {
+			continue
 		}
-		sum += ctr
+		if neighbor == "SAN" {
+			return depth
+		}
+		sum += dfs(neighbor, curr, depth+1, orbits)
 	}
-	println(sum)
+	return sum
 }
