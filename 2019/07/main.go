@@ -86,13 +86,13 @@ func getParams(prog []int, offset int, modes []int) []int {
 	return params
 }
 
-func compute(prog []int, input []int) []int {
-	output := make([]int, 0)
+func compute(prog []int, input chan int, output chan int) {
 	ptr := 0
 	for {
 		op, modes := parseOp(prog[ptr])
 		if op.code == OpHlt.code {
-			break
+			close(output)
+			return
 		}
 		params := getParams(prog, ptr+1, modes)
 		switch op.code {
@@ -101,13 +101,9 @@ func compute(prog []int, input []int) []int {
 		case OpMlt.code:
 			prog[params[2]] = prog[params[0]] * prog[params[1]]
 		case OpInp.code:
-			if len(input) == 0 {
-				panic("OpInp called with empty input queue!")
-			}
-			prog[params[0]] = input[0]
-			input = input[1:]
+			prog[params[0]] = <-input
 		case OpOut.code:
-			output = append(output, prog[params[0]])
+			output <- prog[params[0]]
 		case OpIft.code:
 			if prog[params[0]] != 0 {
 				ptr = prog[params[1]]
@@ -135,7 +131,6 @@ func compute(prog []int, input []int) []int {
 		}
 		ptr += op.params + 1
 	}
-	return output
 }
 
 func factorial(n int) int {
@@ -194,20 +189,26 @@ func main() {
 		prog[i] = num
 	}
 
-	phaseSettings := []int{0, 1, 2, 3, 4}
-	sort.Ints(phaseSettings) // NOTE: need to ensure sort for perutations
-	var output []int
+	phases := []int{0, 1, 2, 3, 4}
+	sort.Ints(phases) // NOTE: need to ensure sort for permutation
 	max := -1
 	for hasNext := true; hasNext; {
-		input := 0
-		for _, phase := range phaseSettings {
-			output = compute(prog, []int{phase, input})
-			input = output[0]
+		channels := make([]chan int, len(phases)+1)
+		channels[0] = make(chan int)
+		for i, phase := range phases {
+			channels[i+1] = make(chan int)
+			progCopy := make([]int, len(prog))
+			copy(progCopy, prog)
+			go compute(progCopy, channels[i], channels[i+1])
+			channels[i] <- phase
 		}
-		if output[0] > max {
-			max = output[0]
+		channels[0] <- 0
+		close(channels[0])
+		result := <-channels[len(phases)]
+		if result > max {
+			max = result
 		}
-		hasNext = permute(phaseSettings)
+		hasNext = permute(phases)
 	}
 	println(max)
 }
