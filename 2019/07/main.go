@@ -1,7 +1,6 @@
 package main
 
 import (
-	//"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -189,7 +188,7 @@ func main() {
 		prog[i] = num
 	}
 
-	phases := []int{0, 1, 2, 3, 4}
+	phases := []int{5, 6, 7, 8, 9}
 	sort.Ints(phases) // NOTE: need to ensure sort for permutation
 	max := -1
 	for hasNext := true; hasNext; {
@@ -203,8 +202,10 @@ func main() {
 			channels[i] <- phase
 		}
 		channels[0] <- 0
-		close(channels[0])
-		result := <-channels[len(phases)]
+		var result int
+		for result = range channels[len(phases)] {
+			go func() { channels[0] <- result }()
+		}
 		if result > max {
 			max = result
 		}
