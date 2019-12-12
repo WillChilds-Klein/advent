@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"math"
 	"os"
 	"strconv"
 	"strings"
 )
+
+// https://adventofcode.com/2019/day/8
 
 const (
 	LayerWidth  = 25
@@ -21,10 +22,57 @@ func check(err error) {
 }
 
 func printLayer(layer [][]int) {
-	for _, row := range layer {
-		fmt.Println(row)
+	for i, row := range layer {
+		for j := range row {
+			switch layer[i][j] {
+			case 0:
+				fmt.Print(" ")
+			case 1:
+				fmt.Print("█")
+			default:
+				fmt.Print(layer[i][j])
+			}
+		}
+		fmt.Print("\n")
 	}
-	fmt.Println()
+}
+
+func decodeLayers(raw []int) [][][]int {
+	numLayers := len(raw) / LayerHeight / LayerWidth
+	layers := make([][][]int, numLayers)
+	for layerIdx := 0; layerIdx < numLayers; layerIdx++ {
+		layer := make([][]int, LayerHeight)
+		for i := 0; i < LayerHeight; i++ {
+			row := make([]int, LayerWidth)
+			for j := 0; j < LayerWidth; j++ {
+				rawIdx := (layerIdx * LayerHeight * LayerWidth) + (i * LayerWidth) + j
+				row[j] = raw[rawIdx]
+			}
+			layer[i] = row
+		}
+		layers[layerIdx] = layer
+	}
+	return layers
+}
+
+func flattenLayers(layers [][][]int) [][]int {
+	flattened := make([][]int, LayerHeight)
+	for i := range flattened {
+		flattened[i] = make([]int, LayerWidth)
+		for j := range flattened[i] {
+			flattened[i][j] = 2
+		}
+	}
+	for _, layer := range layers {
+		for i := 0; i < LayerHeight; i++ {
+			for j := 0; j < LayerWidth; j++ {
+				if flattened[i][j] == 2 {
+					flattened[i][j] = layer[i][j]
+				}
+			}
+		}
+	}
+	return flattened
 }
 
 func main() {
@@ -42,39 +90,7 @@ func main() {
 		raw[i] = num
 	}
 
-	numLayers := len(raw) / LayerHeight / LayerWidth
-	layers := make([][][]int, numLayers)
-	minZeroes, minZeroesIdx := math.MaxInt64, -1
-	for layerIdx := 0; layerIdx < numLayers; layerIdx++ {
-		zeroes := 0
-		layer := make([][]int, LayerHeight)
-		for i := 0; i < LayerHeight; i++ {
-			row := make([]int, LayerWidth)
-			for j := 0; j < LayerWidth; j++ {
-				rawIdx := (layerIdx * LayerHeight * LayerWidth) + (i * LayerWidth) + j
-				row[j] = raw[rawIdx]
-				if row[j] == 0 {
-					zeroes++
-				}
-			}
-			layer[i] = row
-		}
-		if zeroes < minZeroes {
-			minZeroes = zeroes
-			minZeroesIdx = layerIdx
-		}
-		layers[layerIdx] = layer
-	}
-	ones, twos := 0, 0
-	for _, row := range layers[minZeroesIdx] {
-		for _, num := range row {
-			switch num {
-			case 1:
-				ones++
-			case 2:
-				twos++
-			}
-		}
-	}
-	fmt.Println(ones * twos)
+	layers := decodeLayers(raw)
+	image := flattenLayers(layers)
+	printLayer(image)
 }
