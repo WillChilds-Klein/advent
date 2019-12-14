@@ -167,7 +167,7 @@ func main() {
 
 	input, output := make(chan int), make(chan int)
 	go compute(bigProg, input, output)
-	input <- 1
+	input <- 2
 	for o := range output {
 		fmt.Println(o)
 	}
