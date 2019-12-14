@@ -77,7 +77,7 @@ func parseOp(opInt int) (Op, []int) {
 	return op, modes
 }
 
-func getParams(prog []int, offset int, modes []int, relBase int) []int {
+func getParams(prog map[int]int, offset int, modes []int, relBase int) []int {
 	params := make([]int, len(modes))
 	for i := 0; i < len(params); i++ {
 		mode := modes[i]
@@ -95,7 +95,7 @@ func getParams(prog []int, offset int, modes []int, relBase int) []int {
 	return params
 }
 
-func compute(prog []int, input chan int, output chan int) {
+func compute(prog map[int]int, input chan int, output chan int) {
 	ptr, relBase := 0, 0
 	for {
 		op, modes := parseOp(prog[ptr])
@@ -152,22 +152,16 @@ func main() {
 	file, err := ioutil.ReadFile(fname)
 	check(err)
 	ss := strings.Split(string(file), ",")
-	prog := make([]int, len(ss))
+	prog := make(map[int]int, len(ss))
 	for i, s := range ss {
 		num, err := strconv.Atoi(strings.Trim(s, "\n "))
 		check(err)
 		prog[i] = num
 	}
 
-	// TODO: instead of using fixed-size array, make datastructure with virtual
-	// address space that reallocates as needed. or better yet, just use a map
-	// w/ default values of 0!
-	bigProg := make([]int, 10000)
-	copy(bigProg, prog)
-
 	input, output := make(chan int), make(chan int)
-	go compute(bigProg, input, output)
-	input <- 2
+	go compute(prog, input, output)
+	input <- 1
 	for o := range output {
 		fmt.Println(o)
 	}
