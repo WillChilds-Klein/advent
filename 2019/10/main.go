@@ -49,14 +49,37 @@ func step(p, q Point) (int, int) {
 	return x_diff / gcf, y_diff / gcf
 }
 
-func visible(universe map[Point]bool, p, q Point) bool {
+func firstVisible(universe map[Point]bool, p, q Point) Point {
 	x_step, y_step := step(p, q)
 	for x, y := p.x+x_step, p.y+y_step; x != q.x || y != q.y; x, y = x+x_step, y+y_step {
-		if (universe[Point{x, y}]) {
-			return false
+		current := Point{x, y}
+		if universe[current] {
+			return current
 		}
 	}
-	return true
+	return q
+}
+
+func nextCoordinates(x_prev, y_prev, x_max, y_max int) (int, int) {
+	x, y := x_prev, y_prev
+	if x == 0 && y == 0 {
+		y++
+	} else if x == 0 && y == y_max {
+		x++
+	} else if x == x_max && y == y_max {
+		y--
+	} else if x == x_max && y == 0 {
+		x--
+	} else if x == 0 {
+		y++
+	} else if y == 0 {
+		x--
+	} else if y == y_max {
+		x++
+	} else if x == x_max {
+		y--
+	}
+	return x, y
 }
 
 func main() {
@@ -67,13 +90,13 @@ func main() {
 	file, err := ioutil.ReadFile(fname)
 	check(err)
 
-	rows := strings.Split(string(file), "\n")
+	rows := strings.Split(strings.Trim(string(file), "\n"), "\n")
 	universe := make(map[Point]bool, 0)
 	for i, row := range rows {
 		for j, itm := range strings.Split(row, "") {
 			switch itm {
 			case "#":
-				universe[Point{x: i, y: j}] = true
+				universe[Point{i, j}] = true
 			case ".":
 				// no-op
 			default:
@@ -82,20 +105,46 @@ func main() {
 		}
 	}
 
-	max := 0
+	maxCount := 0
+	var maxCoord Point
 	for asteroid, _ := range universe {
 		count := 0
 		for other, _ := range universe {
 			if asteroid == other {
 				continue
 			}
-			if visible(universe, asteroid, other) {
+			visible := firstVisible(universe, asteroid, other) == other
+			if visible {
 				count++
 			}
 		}
-		if count > max {
-			max = count
+		if count > maxCount {
+			maxCount = count
+			maxCoord = asteroid
 		}
 	}
-	println(max)
+	fmt.Println(maxCount, maxCoord)
+
+	x_max, y_max := len(rows)-1, len(rows[0])-1
+	x, y := 0, maxCoord.y-1
+	var twhdthCoord Point
+	destroyed := 0
+	for {
+		x, y = nextCoordinates(x, y, x_max, y_max)
+		curr := Point{x, y}
+		if curr == maxCoord {
+			continue
+		}
+		target := firstVisible(universe, maxCoord, curr)
+		if universe[target] {
+			universe[target] = false
+			destroyed++
+			fmt.Println(target, destroyed)
+		}
+		if destroyed == 200 {
+			twhdthCoord = target
+			break
+		}
+	}
+	fmt.Println(100*twhdthCoord.x + twhdthCoord.y)
 }
