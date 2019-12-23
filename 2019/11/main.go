@@ -156,6 +156,34 @@ type Point struct {
 	x, y int
 }
 
+func printCanvas(canvas map[Point]int) {
+	x_min, y_min, x_max, y_max := 0, 0, 0, 0
+	for p := range canvas {
+		if p.x < x_min {
+			x_min = p.x
+		}
+		if p.y < y_min {
+			y_min = p.y
+		}
+		if p.x > x_max {
+			x_max = p.x
+		}
+		if p.y > y_max {
+			y_max = p.y
+		}
+	}
+	for i := x_min; i <= x_max; i++ {
+		for j := y_min; j <= y_max; j++ {
+			if canvas[Point{i, j}] > 0 {
+				fmt.Printf("#")
+			} else {
+				fmt.Printf(" ")
+			}
+		}
+		fmt.Printf("\n")
+	}
+}
+
 func move(pos Point, orientation, turn int) (Point, int) {
 	newOrientation := orientation
 	switch turn {
@@ -210,6 +238,7 @@ func main() {
 	pos := Point{0, 0}
 	orientation := OrientationUp
 	go compute(prog, input, output)
+	canvas[pos] = ColorWhite
 	input <- canvas[pos]
 	for color := range output {
 		switch color {
@@ -224,5 +253,5 @@ func main() {
 		pos, orientation = move(pos, orientation, turn)
 		input <- canvas[pos]
 	}
-	fmt.Println(len(canvas))
+	printCanvas(canvas)
 }
