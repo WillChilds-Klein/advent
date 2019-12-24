@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"hash/fnv"
 	"io/ioutil"
 	"math"
 	"os"
@@ -87,6 +88,14 @@ func calculateTotalEnergy(body Body) int {
 	return potential * kinetic
 }
 
+func hashBodies(bodies []Body) uint64 {
+	hash := fnv.New64()
+	for _, body := range bodies {
+		hash.Write([]byte(body.String()))
+	}
+	return hash.Sum64()
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		panic("No input file specified!")
@@ -103,14 +112,15 @@ func main() {
 		bodies[i] = body
 	}
 
-	for i := 0; i < 1000; i++ {
+	time := make(map[uint64]bool)
+	for i := uint64(0); i <= math.MaxUint64; i++ {
 		bodies = updateVelocities(bodies)
 		bodies = updatePositions(bodies)
+		bodiesHash := hashBodies(bodies)
+		if time[bodiesHash] {
+			fmt.Println(i)
+			return
+		}
+		time[bodiesHash] = true
 	}
-
-	sum := 0
-	for _, body := range bodies {
-		sum += calculateTotalEnergy(body)
-	}
-	fmt.Println(sum)
 }
