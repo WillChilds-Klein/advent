@@ -18,42 +18,48 @@ func check(err error) {
 }
 
 type Chemical struct {
-	name       string
-	count      int
-	components map[string]int
-}
-
-func (chem Chemical) String() string {
-	components := make([]string, len(chem.components))
-	i := 0
-	for component, count := range chem.components {
-		components[i] = fmt.Sprintf("%d %s", count, component)
-		i++
-	}
-	result := fmt.Sprintf("%d %s", chem.count, chem.name)
-	return strings.Join([]string{strings.Join(components, ", "), result}, " => ")
+	name  string
+	count int
 }
 
 func (chem *Chemical) Parse(str string) error {
-	factors := strings.Split(str, " => ")
-	if len(factors) != 2 {
-		return errors.New("Too many '=>' in Chemical str")
-	}
-	_, err := fmt.Sscanf(factors[1], "%d %s", &chem.count, &chem.name)
-	if err != nil {
-		return err
-	}
-	var count int
-	var name string
-	components := strings.Split(factors[0], ", ")
-	for _, component := range components {
-		_, err := fmt.Sscanf(component, "%d %s", &count, &name)
-		if err != nil {
-			return err
-		}
-		chem.components[name] = count
-	}
+	_, err := fmt.Sscanf(str, "%d %s", &chem.count, &chem.name)
 	return err
+}
+
+func (chem Chemical) String() string {
+	return fmt.Sprintf("%d %s", chem.count, chem.name)
+}
+
+func printRecipe(chem Chemical, components []Chemical) string {
+	componentStrs := make([]string, len(components))
+	for i, component := range components {
+		componentStrs[i] = component.String()
+	}
+	return strings.Join([]string{strings.Join(componentStrs, ", "), chem.String()}, " => ")
+}
+
+func parseRecipe(str string) (Chemical, []Chemical, error) {
+	var chem Chemical
+	factors := strings.Split(str, " => ")
+	componentStrs := strings.Split(factors[0], ", ")
+	components := make([]Chemical, len(componentStrs))
+	if len(factors) != 2 {
+		return chem, components, errors.New("Too many '=>' in Chemical str")
+	}
+	err := chem.Parse(factors[1])
+	if err != nil {
+		return chem, components, err
+	}
+	for i, componentStr := range componentStrs {
+		var component Chemical
+		err := component.Parse(componentStr)
+		if err != nil {
+			return chem, components, err
+		}
+		components[i] = component
+	}
+	return chem, components, nil
 }
 
 func main() {
@@ -64,11 +70,11 @@ func main() {
 	file, err := ioutil.ReadFile(fname)
 	check(err)
 	ss := strings.Split(strings.Trim(string(file), "\n"), "\n")
+	recipes := make(map[Chemical][]Chemical, 0)
 	for _, s := range ss {
-		var chem Chemical
-		chem.components = make(map[string]int, 0)
-		err := chem.Parse(s)
+		chem, components, err := parseRecipe(s)
 		check(err)
-		fmt.Println(chem)
+		recipes[chem] = components
 	}
+	fmt.Println(recipes)
 }
