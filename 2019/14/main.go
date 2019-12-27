@@ -1,9 +1,9 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"strings"
 )
@@ -17,49 +17,22 @@ func check(err error) {
 	}
 }
 
-type Chemical struct {
-	name  string
-	count int
-}
-
-func (chem *Chemical) Parse(str string) error {
-	_, err := fmt.Sscanf(str, "%d %s", &chem.count, &chem.name)
-	return err
-}
-
-func (chem Chemical) String() string {
-	return fmt.Sprintf("%d %s", chem.count, chem.name)
-}
-
-func printRecipe(chem Chemical, components []Chemical) string {
-	componentStrs := make([]string, len(components))
-	for i, component := range components {
-		componentStrs[i] = component.String()
+func ore(recipes map[string]map[string]int, outputs map[string]int, curr string) int {
+	if curr == "ORE" {
+		return 1
 	}
-	return strings.Join([]string{strings.Join(componentStrs, ", "), chem.String()}, " => ")
-}
-
-func parseRecipe(str string) (Chemical, []Chemical, error) {
-	var chem Chemical
-	factors := strings.Split(str, " => ")
-	componentStrs := strings.Split(factors[0], ", ")
-	components := make([]Chemical, len(componentStrs))
-	if len(factors) != 2 {
-		return chem, components, errors.New("Too many '=>' in Chemical str")
-	}
-	err := chem.Parse(factors[1])
-	if err != nil {
-		return chem, components, err
-	}
-	for i, componentStr := range componentStrs {
-		var component Chemical
-		err := component.Parse(componentStr)
-		if err != nil {
-			return chem, components, err
+	sum := 0
+	for component, count := range recipes[curr] {
+		blockSize, present := outputs[component]
+		if !present {
+			blockSize = 1
 		}
-		components[i] = component
+		ceilCount := int(math.Ceil(float64(count) / float64(blockSize)))
+		fmt.Println("ceilCount", component, count, ceilCount, float64(count), float64(outputs[component]))
+		sum += ceilCount * ore(recipes, outputs, component)
 	}
-	return chem, components, nil
+	fmt.Println(curr, sum)
+	return sum
 }
 
 func main() {
@@ -70,11 +43,30 @@ func main() {
 	file, err := ioutil.ReadFile(fname)
 	check(err)
 	ss := strings.Split(strings.Trim(string(file), "\n"), "\n")
-	recipes := make(map[Chemical][]Chemical, 0)
+	recipes := make(map[string]map[string]int, 0)
+	outputs := make(map[string]int, 0)
 	for _, s := range ss {
-		chem, components, err := parseRecipe(s)
+		factors := strings.Split(s, " => ")
+		if len(factors) != 2 {
+			panic("Too many '=>' in Chemical str")
+		}
+		var count int
+		var name string
+		_, err := fmt.Sscanf(factors[1], "%d %s", &count, &name)
 		check(err)
-		recipes[chem] = components
+		outputs[name] = count
+		components := make(map[string]int, 0)
+		componentStrs := strings.Split(factors[0], ", ")
+		for _, componentStr := range componentStrs {
+			var componentCount int
+			var componentName string
+			_, err := fmt.Sscanf(componentStr, "%d %s", &componentCount, &componentName)
+			check(err)
+			components[componentName] = componentCount
+		}
+		recipes[name] = components
 	}
-	fmt.Println(recipes)
+	fmt.Println("recipes", recipes)
+	fmt.Println("outputs", outputs)
+	fmt.Println("ore", 1*ore(recipes, outputs, "FUEL"))
 }
