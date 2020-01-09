@@ -45,6 +45,7 @@ const (
 	TileWall       = 1
 	TileEmpty      = 2
 	TileFound      = 3
+	TileOxygen     = 4
 )
 
 var DirInverses = map[int]int{
@@ -199,7 +200,7 @@ func printCanvas(canvas map[Point]int, pos Point, log []int, minSteps int) {
 				fmt.Printf("✚")
 				continue
 			}
-			switch canvas[Point{i, j}] {
+			switch tile := canvas[Point{i, j}]; tile {
 			case TileUnexplored:
 				fmt.Printf("X")
 			case TileEmpty:
@@ -208,6 +209,10 @@ func printCanvas(canvas map[Point]int, pos Point, log []int, minSteps int) {
 				fmt.Printf("█")
 			case TileFound:
 				fmt.Printf("✓")
+			case TileOxygen:
+				fmt.Printf("O")
+			default:
+				panic(fmt.Sprintf("Invalid tile: %d", tile))
 			}
 		}
 		fmt.Printf("\n")
@@ -271,12 +276,14 @@ func main() {
 	output := make(chan int)
 	canvas := make(map[Point]int)
 
+	var goal Point
 	minSteps := math.MaxInt32
 	log := make([]int, 0)
 
 	pos := Point{0, 0}
 	dir := exploreNeighbor(canvas, pos)
 	newPos := move(pos, dir)
+	count := 1
 
 	go compute(prog, input, output)
 	input <- dir
@@ -288,9 +295,12 @@ func main() {
 		case TileEmpty:
 			log = append(log, dir)
 			pos = newPos
+			count++
 		case TileFound:
 			log = append(log, dir)
 			pos = newPos
+			count++
+			goal = pos
 			if len(log) < minSteps {
 				minSteps = len(log)
 			}
@@ -333,4 +343,32 @@ func main() {
 	}
 	printCanvas(canvas, pos, log, minSteps)
 	time.Sleep(100 * time.Millisecond)
+
+	steps := -1 // initial oxygenation doesn't count as a step
+	workQueue := []Point{goal}
+	for len(workQueue) > 0 {
+		next := make([]Point, 0)
+		for _, curr := range workQueue {
+			canvas[curr] = TileOxygen
+			if canvas[Point{curr.x, curr.y + 1}] == TileEmpty {
+				next = append(next, Point{curr.x, curr.y + 1})
+			}
+			if canvas[Point{curr.x + 1, curr.y}] == TileEmpty {
+				next = append(next, Point{curr.x + 1, curr.y})
+			}
+			if canvas[Point{curr.x, curr.y - 1}] == TileEmpty {
+				next = append(next, Point{curr.x, curr.y - 1})
+			}
+			if canvas[Point{curr.x - 1, curr.y}] == TileEmpty {
+				next = append(next, Point{curr.x - 1, curr.y})
+			}
+		}
+		workQueue = next
+		steps++
+
+		//clear()
+		//printCanvas(canvas, pos, log, minSteps)
+		//time.Sleep(100 * time.Millisecond)
+	}
+	fmt.Println("steps:", steps)
 }
