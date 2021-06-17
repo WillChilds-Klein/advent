@@ -46,6 +46,7 @@ fn main() {
 
     match vers.as_str() {
         "01" => one(seats),
+        "02" => two(seats),
         _ => panic!("Unsupported vers: {}", vers)
     }
 }
@@ -73,4 +74,36 @@ fn one(seats: Vec<Vec<Direction>>) {
         }
     }
     println!("{}", max_seat_id);
+}
+
+fn two(seats: Vec<Vec<Direction>>) {
+    const N_ROWS: usize = 128;
+    const N_COLS: usize = 8;
+    let mut map = [false; N_COLS*N_ROWS];
+    for seat in seats {
+        let mut row_lo = 0;
+        let mut row_hi = N_ROWS-1;
+        let mut col_lo = 0;
+        let mut col_hi = N_COLS-1;
+        for direction in seat {
+            match direction {
+                Direction::Back => row_lo += (row_hi-row_lo)/2+1,
+                Direction::Front => row_hi -= (row_hi-row_lo)/2+1,
+                Direction::Left => col_hi -= (col_hi-col_lo)/2+1,
+                Direction::Right => col_lo += (col_hi-col_lo)/2+1,
+            };
+        }
+        let row = cmp::min(row_lo, row_hi);
+        let col = cmp::min(col_lo, col_hi);
+        map[8*row+col] = true;
+    }
+
+    let mut seat_id: i32 = -1;
+    for ii in 1..map.len()-2 {
+        if map[ii-1] && !map[ii] && map[ii+1] {
+            seat_id = ii as i32;
+            break;
+        }
+    }
+    println!("{}", seat_id);
 }
