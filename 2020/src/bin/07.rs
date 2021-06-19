@@ -4,6 +4,8 @@ use std::io::BufRead;
 
 use regex::Regex;
 
+const TARGET: &str = "shiny gold";
+
 fn main() {
     if env::args().count() < 3 {
         panic!("Usage: cargo run --bin <bin> <vers> <input_file>")
@@ -44,13 +46,13 @@ fn main() {
     match vers.as_str() {
         "01" => one(rules),
         "02" => two(rules),
+        "02_dfs" => println!("{}", two_dfs(&rules, TARGET)-1),  // -1 to negate top-level shiny gold bag
         _ => panic!("Unsupported vers: {}", vers)
     }
 }
 
 fn one(rules: HashMap<String,Vec<(String,i32)>>) {
     let mut count = 0;
-    const TARGET: &str = "shiny gold";
     for (lead, _) in &rules {
         let mut work: Vec<&String> = Vec::new();    // BFS work queue
         if lead == TARGET {                         // don't search TARGET entry
@@ -75,7 +77,6 @@ fn one(rules: HashMap<String,Vec<(String,i32)>>) {
 
 fn two(rules: HashMap<String,Vec<(String,i32)>>) {
     let mut bag_count = 0;
-    const TARGET: &str = "shiny gold";
     let mut work: Vec<&str> = Vec::new();
     work.push(TARGET);
     while !work.is_empty() {
@@ -93,4 +94,13 @@ fn two(rules: HashMap<String,Vec<(String,i32)>>) {
         }
     }
     println!("{}", bag_count);
+}
+
+fn two_dfs(rules: &HashMap<String,Vec<(String,i32)>>, curr: &str) -> i32 {
+    let mut sum = 1;
+    let bags = rules.get(curr).unwrap();
+    for (color, count) in bags {
+        sum += count * two_dfs(rules, color);
+    }
+    return sum;
 }
