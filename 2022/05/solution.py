@@ -13,21 +13,35 @@ def main():
             stack_lines.append(line)
         else:
             break
-    stacks = []
+    raw_stacks = []
     for line in stack_lines:
-        stacks.append(re.findall("\[\w\]|    ", line))
-    stacks = normalize_stacks(stacks)
+        raw_stacks.append(re.findall("\[\w\]|    ", line))
+    moves = []
     for line in lines:
         if not line.startswith("move"):
             continue
         c, f, t = map(
             int, re.search("move (\d+) from (\d+) to (\d+)", line).group(1, 2, 3)
         )
+        moves.append([c, f, t])
+    stacks = normalize_stacks(raw_stacks)
+    move_crates_individually(stacks, moves)
+    print("PART 1:", "".join([stack[-1] for stack in stacks]))
+    stacks = normalize_stacks(raw_stacks)
+    move_crates_batch(stacks, moves)
+    print("PART 2:", "".join([stack[-1] for stack in stacks]))
+
+
+def move_crates_individually(stacks: list[list[str]], moves: list[list[int]]):
+    for c, f, t in moves:
         for _ in range(c):
-            if stacks[f - 1]:
-                stacks[t - 1].append(stacks[f - 1].pop())
-    tops = [stack[-1] for stack in stacks]
-    print("PART 1:", "".join(tops))
+            stacks[t - 1].append(stacks[f - 1].pop())
+
+
+def move_crates_batch(stacks: list[list[str]], moves: list[list[int]]):
+    for c, f, t in moves:
+        stacks[t - 1].extend(stacks[f - 1][(-1 * c) :])
+        del stacks[f - 1][(-1 * c) :]
 
 
 def normalize_stacks(stacks: list[list[str]]) -> list[list[typing.Optional[str]]]:
