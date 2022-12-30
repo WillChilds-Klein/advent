@@ -18,7 +18,7 @@ cat <<EOF >$DAY_DIR/solution.py
 import sys
 
 def main():
-    lines = open(sys.argv[1]).readlines()
+    lines = list(map(str.strip, open(sys.argv[1]).readlines()))
     # TODO
 
 if __name__ == '__main__':
