@@ -1,4 +1,7 @@
+import functools
 import json
+import operator
+import secrets
 import sys
 import typing
 
@@ -44,9 +47,28 @@ def main():
         return None
 
     count = 0
-    for i, pair in enumerate(pairs):
-        count += i + 1 if compare(pair[0], pair[1]) else 0
+    for i, (l, r) in enumerate(pairs):
+        count += i + 1 if compare(l, r) else 0
     print("PART 1:", count)
+
+    # cf. https://github.com/WillChilds-Klein/pysort/blob/master/sort.py#L47
+    def qsort(pkts: list) -> list:
+        if pkts == []:
+            return pkts
+        return qsort([pkt for pkt in pkts[1:] if compare(pkt, pkts[0])]) + pkts[:1] + \
+               qsort([pkt for pkt in pkts[1:] if not compare(pkt, pkts[0])])
+
+    packets = []
+    for pair in pairs:
+        packets.extend(pair)
+    dividers = [[[2]], [[6]]]
+    packets.extend(list(dividers))
+    packets = qsort(packets)
+    divider_idxs = []
+    for i, packet in enumerate(packets):
+        if packet in dividers:
+            divider_idxs.append(i + 1)
+    print("PART 2:", functools.reduce(operator.mul, divider_idxs, 1))
 
 
 if __name__ == "__main__":
