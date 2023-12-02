@@ -42,6 +42,15 @@ def main():
 
     print("PART 1:", covered_count)
 
+    min_coord, max_coord = 0, 4000000
+    bounding_box_points = set()
+    for s, b in mappings:
+        d = distance(s, b)
+        for i in range(d+1):
+            bounding_box_points.add(Point(s.x+i, s.y+(d-i)))
+            bounding_box_points.add(Point(s.x+(d-i), s.y-i))
+            bounding_box_points.add(Point(s.x-i, s.y-(d-i))
+            bounding_box_points.add(Point(s.x-(d-i), s.y+i))
 
 def distance(a: Point, b: Point) -> int:
     return abs(a.x - b.x) + abs(a.y - b.y)
