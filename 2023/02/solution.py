@@ -1,7 +1,6 @@
+import functools
 import re
 import sys
-
-TARGET = {'red': 12, 'green': 13, 'blue': 14}
 
 
 def parse_game(line: str) -> list[dict[str,int]]:
@@ -17,20 +16,20 @@ def parse_game(line: str) -> list[dict[str,int]]:
         ret.append(draw)
     return ret
 
-def is_valid(draw: dict[str,int]) -> bool:
-    for color, count in draw.items():
-        if color not in TARGET or TARGET[color] < count:
-            return False
-    return True
+def game_power(game: list[dict[str,int]]) -> int:
+    min_sets = {}
+    for draw in game:
+        for color, count in draw.items():
+            if color not in min_sets or min_sets[color] < count:
+                min_sets[color] = count
+    return functools.reduce(lambda x, a: x * a, min_sets.values())
 
 def main():
     lines = [l for l in sys.stdin.readlines()]
     rsum = 0
     for line in lines:
-        idx = int(line.split(': ')[0].split(' ')[1])
         game = parse_game(line.split(': ')[1])
-        if all(map(is_valid, game)):
-            rsum += idx
+        rsum += game_power(game)
     print(rsum)
 
 if __name__ == '__main__':
